@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR TOONIX™ VIP SYSTEM (AI SIGNAL)</title>
+    <style>
+        :root {
+            --bg-dark: #060913;
+            --panel-bg: rgba(12, 18, 34, 0.94);
+            --panel-border: rgba(255, 184, 0, 0.34);
+            --accent-cyan: #18e0ff;
+            --accent-gold: #ffb800;
+            --accent-green: #00f59b;
+            --accent-pink: #ff2a6d;
+            --accent-purple: #9b5cff;
+            --text-main: #f4f7fc;
+            --text-muted: #95a7c4;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 18% 15%, rgba(255, 184, 0, 0.11), transparent 42%),
+                radial-gradient(circle at 82% 25%, rgba(24, 224, 255, 0.10), transparent 40%),
+                radial-gradient(circle at 65% 85%, rgba(155, 92, 255, 0.10), transparent 45%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        /* FULL SCREEN WIN & JACKPOT FLASH OVERLAYS */
+        #fullScreenFlash {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 99998;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        body.flash-win #fullScreenFlash {
+            background-color: rgba(0, 245, 155, 0.32);
+            box-shadow: inset 0 0 115px rgba(0, 245, 155, 0.85);
+            opacity: 1;
+            animation: winPulse 0.6s infinite alternate;
+        }
+
+        body.flash-jackpot #fullScreenFlash {
+            background: linear-gradient(135deg, rgba(255,184,0,0.42), rgba(24,224,255,0.35), rgba(155,92,255,0.35));
+            box-shadow: inset 0 0 155px rgba(255, 184, 0, 0.92);
+            opacity: 1;
+            animation: jackpotDisco 0.45s infinite alternate;
+        }
+
+        @keyframes winPulse {
+            0% { opacity: 0.25; }
+            100% { opacity: 0.65; }
+        }
+
+        @keyframes jackpotDisco {
+            0% { filter: hue-rotate(0deg) brightness(1.15); }
+            50% { filter: hue-rotate(120deg) brightness(1.35); }
+            100% { filter: hue-rotate(240deg) brightness(1.15); }
+        }
+
+        /* LOSS SHAKE EFFECT */
+        body.loss-shake {
+            animation: lossScreenShake 0.42s ease;
+        }
+        @keyframes lossScreenShake {
+            0% { transform: translate(0, 0); background-color: rgba(255, 42, 109, 0.52); }
+            20% { transform: translate(-10px, 8px); }
+            40% { transform: translate(10px, -8px); }
+            60% { transform: translate(-8px, -6px); background-color: rgba(255, 42, 109, 0.68); }
+            80% { transform: translate(8px, 6px); }
+            100% { transform: translate(0, 0); background-color: var(--bg-dark); }
+        }
+
+        /* LAST 5 SECONDS SCREEN COUNTDOWN ENTRY (5, 4, 3, 2, 1) */
+        #lastFiveOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2147483640;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, rgba(6, 9, 19, 0.35) 0%, rgba(6, 9, 19, 0.05) 70%);
+        }
+        #lastFiveOverlay.active {
+            display: flex;
+        }
+        .countdown-box {
+            width: 124px;
+            height: 124px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 184, 0, 0.24), rgba(10, 16, 30, 0.92));
+            border: 3px solid var(--accent-gold);
+            box-shadow:
+                0 0 35px rgba(255, 184, 0, 0.55),
+                0 0 70px rgba(24, 224, 255, 0.28),
+                inset 0 0 25px rgba(255, 184, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: countEntryPop 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .countdown-num {
+            font-size: 54px;
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(180deg, #fff5cc 0%, var(--accent-gold) 55%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(255, 184, 0, 0.45);
+        }
+        .countdown-sub {
+            margin-top: 4px;
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+        }
+        @keyframes countEntryPop {
+            0% { transform: scale(0.35) rotate(-12deg); opacity: 0; }
+            65% { transform: scale(1.12) rotate(2deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* BIG / SMALL TRADE CALLOUT BANNER (SHOWN 5-10S AFTER NEW PERIOD STARTS, FOR 3 SECONDS) */
+        #tradeCalloutBanner {
+            display: none;
+            position: fixed;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2147483645;
+            min-width: 260px;
+            max-width: 90vw;
+            padding: 12px 16px;
+            border-radius: 14px;
+            background: rgba(10, 16, 30, 0.98);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.78);
+            text-align: center;
+            pointer-events: none;
+            animation: calloutSlideIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        #tradeCalloutBanner.show {
+            display: block;
+        }
+        #tradeCalloutBanner.theme-big {
+            border: 2px solid var(--accent-cyan);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.78), 0 0 24px rgba(24, 224, 255, 0.32);
+        }
+        #tradeCalloutBanner.theme-small {
+            border: 2px solid var(--accent-gold);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.78), 0 0 24px rgba(255, 184, 0, 0.32);
+        }
+        .callout-tag {
+            font-size: 8px;
+            font-weight: 900;
+            letter-spacing: 1.3px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .callout-main {
+            font-size: 13px;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.45;
+        }
+        .callout-size-text {
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+        }
+        .callout-size-big {
+            color: var(--accent-cyan);
+        }
+        .callout-size-small {
+            color: var(--accent-gold);
+        }
+        @keyframes calloutSlideIn {
+            0% { transform: translate(-50%, -24px) scale(0.92); opacity: 0; }
+            100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+        }
+
+        #gameFrame {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            border: none;
+            z-index: 1;
+            display: none;
+        }
+
+        #bg-canvas, #fx-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+        }
+        #bg-canvas { z-index: 0; }
+        #fx-canvas { z-index: 99999; }
+
+        .app-container {
+            position: fixed;
+            top: 14px;
+            left: 14px;
+            z-index: 999999;
+            width: 290px;
+            max-width: 92vw;
+            max-height: calc(100vh - 28px);
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .app-container::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+        .app-container.hidden-logo-only {
+            width: auto;
+            max-width: none;
+            max-height: none;
+            overflow: visible;
+        }
+
+        .cyber-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--panel-border);
+            border-radius: 15px;
+            box-shadow:
+                0 14px 34px rgba(0, 0, 0, 0.7),
+                0 0 24px rgba(255, 184, 0, 0.13),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            padding: 12px;
+            margin-bottom: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cyber-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 2.5px;
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-cyan), var(--accent-purple));
+        }
+
+        .header-drag-handle {
+            background: linear-gradient(90deg, rgba(255, 184, 0, 0.14), rgba(24, 224, 255, 0.12));
+            border: 1px solid rgba(255, 184, 0, 0.2);
+            padding: 5px 8px;
+            text-align: center;
+            font-size: 8.5px;
+            color: var(--accent-gold);
+            border-radius: 7px;
+            margin-bottom: 8px;
+            letter-spacing: 1.4px;
+            font-weight: 700;
+            cursor: move;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .header-drag-handle:hover {
+            background: linear-gradient(90deg, rgba(255, 184, 0, 0.24), rgba(24, 224, 255, 0.18));
+            border-color: rgba(255, 184, 0, 0.45);
+        }
+
+        .profile-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-gold);
+            margin: 0 auto 7px;
+            display: block;
+            object-fit: cover;
+            box-shadow: 0 0 20px rgba(255, 184, 0, 0.42), 0 0 10px rgba(24, 224, 255, 0.25);
+        }
+
+        /* PURE LOGO ONLY WHEN HIDDEN (NO EXTRA BADGE, TEXT OR BORDER LINE) */
+        #miniFloatingLogo {
+            display: none;
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.65);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            outline: none;
+            animation: pulseGlow 2.2s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.06); }
+        }
+
+        #miniFloatingLogo img {
+            width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+        }
+
+        .cyber-title {
+            font-size: 13px; font-weight: 900;
+            letter-spacing: 1.3px; text-transform: uppercase;
+            text-align: center; color: #fff;
+            text-shadow: 0 0 14px rgba(255, 184, 0, 0.38);
+            margin-bottom: 3px;
+        }
+
+        .cyber-subtitle {
+            font-size: 8.5px; color: var(--accent-gold);
+            text-align: center; letter-spacing: 1.6px;
+            margin-bottom: 10px; font-weight: 700;
+        }
+
+        .input-group label {
+            display: block; font-size: 8.5px;
+            color: var(--text-muted); letter-spacing: 0.8px;
+            margin-bottom: 5px; text-transform: uppercase; font-weight: 700;
+        }
+
+        .cyber-input {
+            width: 100%; padding: 9px 10px;
+            background: rgba(5, 9, 19, 0.94);
+            border: 1px solid rgba(255, 184, 0, 0.28);
+            border-radius: 8px; color: var(--accent-cyan);
+            font-size: 11.5px; font-weight: 700;
+            outline: none; margin-bottom: 9px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .cyber-input:focus {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.16);
+        }
+
+        .cyber-btn {
+            width: 100%; padding: 8px 10px;
+            background: linear-gradient(135deg, #ffb800, #ff6b2b, #18e0ff);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 8px;
+            color: #060b16; font-weight: 900;
+            font-size: 9px; letter-spacing: 0.9px;
+            text-transform: uppercase; cursor: pointer;
+            text-align: center;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+            transition: transform 0.15s ease, filter 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .cyber-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(255, 184, 0, 0.25);
+        }
+
+        .cyber-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .view-controls { display: flex; gap: 5px; margin-bottom: 7px; }
+        .btn-hide {
+            background: linear-gradient(135deg, #ff2a6d, #9b5cff);
+            color: #fff;
+        }
+        .btn-show {
+            background: linear-gradient(135deg, #0ea5e9, #18e0ff);
+            color: #04121d;
+        }
+        .btn-refresh {
+            background: linear-gradient(135deg, #f59e0b, #ffb800);
+            color: #150e00;
+        }
+
+        #login-screen { display: block; }
+        #dashboard-screen { display: none; }
+
+        /* MARKET SELECTOR DROPDOWN CONTAINER */
+        .market-box {
+            margin-bottom: 7px;
+        }
+        .market-trigger-btn {
+            width: 100%;
+            padding: 8px 10px;
+            background: linear-gradient(135deg, rgba(255, 184, 0, 0.16), rgba(24, 224, 255, 0.14));
+            border: 1px solid rgba(255, 184, 0, 0.45);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 8.5px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+            transition: all 0.2s ease;
+        }
+        .market-trigger-btn:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 14px rgba(255, 184, 0, 0.25);
+        }
+        .market-menu {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-top: 6px;
+            padding: 6px;
+            background: rgba(5, 9, 18, 0.94);
+            border: 1px solid rgba(255, 184, 0, 0.28);
+            border-radius: 9px;
+            animation: menuDrop 0.18s ease-out;
+        }
+        .market-menu.open {
+            display: grid;
+        }
+        @keyframes menuDrop {
+            0% { opacity: 0; transform: translateY(-4px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .mode-btn {
+            background: rgba(10, 16, 30, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted); font-size: 8px; font-weight: 800;
+            padding: 7px 5px; border-radius: 7px; cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+        }
+        .mode-btn:hover {
+            border-color: rgba(255, 184, 0, 0.45);
+            color: #fff;
+        }
+        .mode-btn.active {
+            background: linear-gradient(135deg, rgba(255, 184, 0, 0.26), rgba(24, 224, 255, 0.16));
+            color: var(--accent-gold);
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 12px rgba(255, 184, 0, 0.25);
+        }
+
+        .prediction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 7px; }
+        .prediction-card {
+            background: linear-gradient(180deg, rgba(10, 17, 33, 0.92), rgba(6, 10, 20, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 7px 6px; border-radius: 9px; text-align: center;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .prediction-card.full-width {
+            grid-column: span 2;
+            background: linear-gradient(135deg, rgba(255, 184, 0, 0.11), rgba(24, 224, 255, 0.09));
+            border-color: rgba(255, 184, 0, 0.28);
+        }
+        .card-label { font-size: 7px; color: var(--text-muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.9px; font-weight: 700; }
+        .val-large { font-size: 17px; font-weight: 900; color: var(--accent-gold); text-shadow: 0 0 12px rgba(255, 184, 0, 0.45); letter-spacing: 1px; }
+        .val-numbers { font-size: 13px; font-weight: 800; color: var(--accent-cyan); }
+
+        .pattern-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(5, 9, 18, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 6px 8px; border-radius: 8px; margin-bottom: 7px;
+        }
+        .pattern-dot {
+            width: 18px; height: 18px; border-radius: 5px; background: #111b30;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 8px; font-weight: 900; border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-muted);
+        }
+        .pattern-dot.active-big { background: linear-gradient(135deg, #0ea5e9, #18e0ff); color: #04121d; border-color: transparent; box-shadow: 0 0 8px rgba(24, 224, 255, 0.5); }
+        .pattern-dot.active-small { background: linear-gradient(135deg, #ff2a6d, #9b5cff); color: #fff; border-color: transparent; box-shadow: 0 0 8px rgba(255, 42, 109, 0.5); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 4px; }
+        .stat-box {
+            background: rgba(6, 11, 22, 0.82);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 6px 2px; border-radius: 8px; text-align: center;
+        }
+        .stat-val { font-size: 9px; font-weight: 900; color: #fff; margin-bottom: 2px; }
+        .stat-lbl { font-size: 5.8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+
+        .game-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 7px; }
+        .history-table, .step-table { width: 100%; border-collapse: collapse; font-size: 8.5px; text-align: center; }
+        .history-table th, .step-table th { background: rgba(255, 184, 0, 0.14); color: var(--accent-gold); padding: 6px 4px; font-weight: 800; letter-spacing: 0.5px; }
+        .history-table td, .step-table td { padding: 5px 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+
+        .nav-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 7px; }
+        .tab-btn {
+            padding: 6px 3px;
+            background: rgba(11, 17, 32, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            font-size: 7.5px; font-weight: 800;
+            border-radius: 8px; cursor: pointer;
+            text-align: center; letter-spacing: 0.4px;
+            transition: all 0.2s ease;
+        }
+        .tab-btn:hover {
+            color: #fff;
+            border-color: rgba(255, 184, 0, 0.4);
+        }
+        .tab-btn.active {
+            background: rgba(255, 184, 0, 0.18);
+            color: var(--accent-gold);
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 12px rgba(255, 184, 0, 0.2);
+        }
+
+        .maker-logo{width:50px;height:50px;border-radius:50%;padding:2px;display:block;margin:0 auto 7px;object-fit:cover;border:2px solid var(--accent-gold);box-shadow:0 0 18px rgba(255,184,0,.4)}
+        .maker-title{text-align:center;font-size:11.5px;font-weight:900;letter-spacing:1.2px;color:var(--accent-gold)}
+        .maker-subtitle{text-align:center;font-size:7.5px;color:var(--text-muted);letter-spacing:1.2px;margin-bottom:9px;font-weight:700}
+        .maker-input{width:100%;padding:8px 10px;margin-bottom:8px;background:rgba(5,9,18,.94);border:1px solid rgba(255,184,0,.28);border-radius:8px;color:#fff;font-size:11px;font-weight:700;outline:none;transition:border-color 0.2s ease, box-shadow 0.2s ease}
+        .maker-input:focus{border-color:var(--accent-gold);box-shadow:0 0 0 3px rgba(255,184,0,.15)}
+        .maker-btn{width:100%;padding:8px 10px;border:0;border-radius:8px;cursor:pointer;color:#050c18;background:linear-gradient(135deg,#ffb800,#18e0ff);font-size:9px;font-weight:900;letter-spacing:0.9px;margin-bottom:8px;transition:transform 0.15s ease, filter 0.2s ease}
+        .maker-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+        .maker-btn:active{transform:translateY(1px)}
+        .maker-actions{display:flex;gap:5px;margin-top:8px}
+        .maker-action{flex:1;padding:7px 4px;border-radius:7px;cursor:pointer;font-size:8px;font-weight:800;transition:transform 0.15s ease, filter 0.2s ease}
+        .maker-action:hover{filter:brightness(1.1);transform:translateY(-1px)}
+        .maker-action:active{transform:translateY(1px)}
+        .maker-copy{color:var(--accent-gold);background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.32)}
+        .maker-reset{color:#cbd5e1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+        .maker-use{color:#050c18;background:linear-gradient(135deg,#ffb800,#18e0ff);border:none;}
+        .maker-table{width:100%;border-collapse:collapse;font-size:8.5px;text-align:center;margin-top:6px}
+        .maker-table th{background:rgba(255,184,0,.14);color:var(--accent-gold);padding:5px}
+        .maker-table td{padding:5px;border-bottom:1px solid rgba(255,255,255,.06)}
+        .maker-amount{color:var(--accent-gold);font-weight:900}
+        .maker-total{color:#e2e8f0}
+        .maker-note{text-align:center;color:var(--text-muted);font-size:7.5px;line-height:1.5;margin-top:8px}
+
+        /* POPUP MODAL (STAYS ON TOP EVEN IN HIDE MODE & AUTO DISMISSES AFTER 3 SECONDS) */
+        #customAlertModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2147483647 !important;
+            background: rgba(10, 15, 28, 0.98);
+            backdrop-filter: blur(18px);
+            border: 2px solid var(--accent-gold);
+            box-shadow: 0 0 55px rgba(255, 184, 0, 0.35), 0 20px 60px rgba(0, 0, 0, 0.92);
+            padding: 20px 18px;
+            border-radius: 16px;
+            text-align: center;
+            width: 290px;
+            max-width: 90vw;
+            animation: popIn 0.22s ease-out;
+        }
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.82); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        #customAlertModal h3 { font-size: 14px; margin-bottom: 6px; letter-spacing: 1px; color: #fff; text-shadow: 0 0 12px rgba(255,184,0,0.45); }
+        #customAlertModal p { font-size: 12px; font-weight: 700; color: #e2e8f0; margin-bottom: 0; line-height: 1.55; white-space: pre-line; }
+    </style>
+</head>
+<body>
+
+    <div id="fullScreenFlash"></div>
+    <canvas id="bg-canvas"></canvas>
+    <canvas id="fx-canvas"></canvas>
+    <iframe id="gameFrame" src=""></iframe>
+
+    <!-- LAST 5 SECONDS COUNTDOWN ENTRY OVERLAY (5, 4, 3, 2, 1) -->
+    <div id="lastFiveOverlay">
+        <div class="countdown-box" id="countdownBox">
+            <div class="countdown-num" id="countdownNumber">5</div>
+            <div class="countdown-sub">RESULT INCOMING</div>
+        </div>
+    </div>
+
+    <!-- BIG / SMALL TRADE CALLOUT BANNER (SHOWN 5-10S AFTER NEW PERIOD STARTS, FOR 3 SECONDS) -->
+    <div id="tradeCalloutBanner">
+        <div class="callout-tag" id="calloutTag">AR TOONIX SIGNAL</div>
+        <div class="callout-main" id="calloutMain">এই নাম্বারে ট্রেড নেন!</div>
+        <div id="calloutSizeText" class="callout-size-text callout-size-big">SIGNAL: BIG</div>
+    </div>
+
+    <!-- POPUP NOTIFICATION MODAL (3 SECONDS AUTO CLOSE) -->
+    <div id="customAlertModal">
+        <h3 id="alertTitle">RESULT</h3>
+        <p id="alertMsg">TEXT HERE</p>
+    </div>
+
+    <div class="app-container" id="draggableApp">
+        <!-- PURE LOGO ONLY WHEN HIDDEN -->
+        <div id="miniFloatingLogo" onclick="setPanelMode(true)" title="AR TOONIX">
+            <img src="https://i.ibb.co/wh0KmJMb/converted.png" alt="AR TOONIX Logo">
+        </div>
+
+        <div id="mainPanelGroup">
+            <div id="login-screen" class="cyber-panel">
+                <div class="header-drag-handle">≡ DRAG TO MOVE ≡</div>
+                <img src="https://i.ibb.co/wh0KmJMb/converted.png" alt="AR TOONIX Logo" class="profile-logo">
+                <div class="cyber-title">AR TOONIX™ VIP</div>
+                <div class="cyber-subtitle">RESTRICTED ACCESS</div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <label for="accessKey">ENTER PASSWORD</label>
+                        <input type="password" id="accessKey" class="cyber-input" placeholder="REQUIRED PASSWORD..." required autocomplete="off">
+                    </div>
+                    <div id="loginError" style="color: var(--accent-pink); font-size: 9px; text-align: center; margin-bottom: 8px; display: none; font-weight: 700;">
+                        ❌ ভুল পাসওয়ার্ড!
+                    </div>
+                    <button type="submit" class="cyber-btn">UNLOCK SYSTEM</button>
+                </form>
+            </div>
+
+            <div id="dashboard-screen">
+                <div class="view-controls">
+                    <button type="button" class="cyber-btn btn-hide" onclick="setPanelMode(false)">👁️ HIDE</button>
+                    <button type="button" class="cyber-btn btn-refresh" onclick="resetStatsOnly()">🔄 REFRESH</button>
+                    <button type="button" class="cyber-btn btn-show" onclick="setPanelMode(true)">👁️ SHOW</button>
+                </div>
+
+                <div class="nav-tabs">
+                    <button type="button" id="tabBtn-prediction" class="tab-btn active" onclick="switchTab('prediction')">PREDICT</button>
+                    <button type="button" id="tabBtn-history" class="tab-btn" onclick="switchTab('history')">HISTORY</button>
+                    <button type="button" id="tabBtn-step" class="tab-btn" onclick="switchTab('step')" style="color: #ff6b9d; border-color: rgba(255, 42, 109, 0.35);">AR STEP</button>
+                    <button type="button" id="tabBtn-stepmaker" class="tab-btn" onclick="switchTab('stepmaker')" style="color: var(--accent-gold); border-color: rgba(255, 184, 0, 0.35);">STEP MAKER</button>
+                </div>
+
+                <!-- PREDICTION TAB -->
+                <div id="tab-prediction" class="cyber-panel">
+                    <div class="header-drag-handle">≡ DRAG TO MOVE ≡</div>
+                    <img src="https://i.ibb.co/wh0KmJMb/converted.png" alt="AR TOONIX Logo" class="profile-logo" style="width: 44px; height: 44px; margin-bottom: 4px;">
+
+                    <div class="cyber-title" style="font-size: 10.5px; margin-bottom: 2px;">AR TOONIX SIGNAL AI</div>
+                    <div id="levelIndicator" style="text-align:center; font-size:7.5px; color:var(--accent-gold); margin-bottom:7px; font-weight:700;">CONNECTING AR TOONIX AI...</div>
+
+                    <!-- SINGLE BUTTON FOR ALL 4 MARKETS -->
+                    <div class="market-box">
+                        <button type="button" id="marketMenuToggle" class="market-trigger-btn" onclick="toggleMarketMenu()">
+                            <span id="activeMarketLabel">⏱️ MARKET: WINGO 30S</span>
+                            <span id="marketMenuArrow">▼</span>
+                        </button>
+                        <div id="marketMenu" class="market-menu">
+                            <button type="button" id="btn30s" class="mode-btn active" onclick="switchGameMode('30s')">WINGO 30S</button>
+                            <button type="button" id="btn60s" class="mode-btn" onclick="switchGameMode('60s')">WINGO 60S</button>
+                            <button type="button" id="btn3m" class="mode-btn" onclick="switchGameMode('3m')">WINGO 3MIN</button>
+                            <button type="button" id="btn5m" class="mode-btn" onclick="switchGameMode('5m')">WINGO 5MIN</button>
+                        </div>
+                    </div>
+
+                    <div class="game-options-grid">
+                        <button type="button" onclick="openGame('https://hgnice.biz/#/register?invitationCode=836761723893')" class="cyber-btn" style="font-size: 7.5px; padding: 6px;">🎮 GAME HGZY 1</button>
+                        <button type="button" onclick="openGame('https://dkwin.pro/#/register?invitationCode=457221509891')" class="cyber-btn" style="font-size: 7.5px; padding: 6px; background: linear-gradient(135deg, #0ea5e9, #18e0ff); color: #04121d;">🎮 GAME DK WIN 2</button>
+                    </div>
+
+                    <div class="pattern-bar">
+                        <span style="font-size: 7px; color: var(--text-muted); font-weight: 700; letter-spacing: 0.6px;">PATTERN:</span>
+                        <div class="pattern-dot">-</div><div class="pattern-dot">-</div><div class="pattern-dot">-</div><div class="pattern-dot">-</div><div class="pattern-dot">-</div>
+                    </div>
+
+                    <div class="prediction-grid">
+                        <div class="prediction-card">
+                            <div class="card-label">PERIOD</div>
+                            <div id="nextP" class="val-numbers" style="color: #fff;">----</div>
+                        </div>
+                        <div class="prediction-card">
+                            <div class="card-label">TIMER</div>
+                            <div id="timer" class="val-numbers" style="color: var(--accent-gold);">00:30</div>
+                        </div>
+                        <div class="prediction-card full-width">
+                            <div class="card-label">AR TOONIX SIGNAL SIZE</div>
+                            <div id="res" class="val-large">ANALYZING...</div>
+                        </div>
+                        <div class="prediction-card">
+                            <div class="card-label">PRIMARY</div>
+                            <div id="n1" class="val-numbers">?</div>
+                        </div>
+                        <div class="prediction-card">
+                            <div class="card-label">SECONDARY</div>
+                            <div id="n2" class="val-numbers">?</div>
+                        </div>
+                    </div>
+
+                    <div id="confidence" style="text-align: center; font-size: 8px; font-weight: 800; color: var(--accent-cyan); margin-bottom: 6px; letter-spacing: 0.6px;">
+                        SIGNAL CONFIDENCE: --%
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box"><div id="totalWins" class="stat-val" style="color: var(--accent-green);">0</div><div class="stat-lbl">WINS</div></div>
+                        <div class="stat-box"><div id="totalLosses" class="stat-val" style="color: var(--accent-pink);">0</div><div class="stat-lbl">LOSS</div></div>
+                        <div class="stat-box"><div id="winRate" class="stat-val" style="color: var(--accent-gold);">0%</div><div class="stat-lbl">WIN %</div></div>
+                        <div class="stat-box"><div id="accuracy" class="stat-val" style="color: var(--accent-cyan);">0%</div><div class="stat-lbl">ACC %</div></div>
+                        <div class="stat-box"><div id="jackpotCount" class="stat-val" style="color: var(--accent-gold);">0</div><div class="stat-lbl">JACKPOT</div></div>
+                    </div>
+                </div>
+
+                <!-- HISTORY TAB -->
+                <div id="tab-history" class="cyber-panel" style="display: none;">
+                    <div class="header-drag-handle">≡ DRAG TO MOVE ≡</div>
+                    <div class="cyber-title" style="font-size: 10.5px; margin-bottom: 8px;">HISTORY (10 TRADES)</div>
+                    <table class="history-table">
+                        <thead><tr><th>PERIOD</th><th>NUM</th><th>SIZE</th><th>RESULT</th></tr></thead>
+                        <tbody id="session-h"><tr><td colspan="4" style="color: var(--text-muted); padding: 10px;">WAITING...</td></tr></tbody>
+                    </table>
+                </div>
+
+                <!-- AR STEP TAB -->
+                <div id="tab-step" class="cyber-panel" style="display: none;">
+                    <div class="header-drag-handle">≡ DRAG TO MOVE ≡</div>
+                    <div class="cyber-title" style="font-size: 10.5px; color: #ff6b9d; margin-bottom: 8px;">AR TOONIX STEP (AUTO)</div>
+
+                    <div id="stepSetupSection">
+                        <div class="input-group">
+                            <label for="baseAmount">১. ১ম স্টেপ কত টাকা দিয়ে শুরু করতে চান?</label>
+                            <input type="number" id="baseAmount" class="cyber-input" value="2" placeholder="Enter 1st step amount...">
+                        </div>
+                        <div class="input-group">
+                            <label for="totalBalanceInput">২. আপনার মোট ব্যালেন্স কত?</label>
+                            <input type="number" id="totalBalanceInput" class="cyber-input" value="1000" placeholder="Enter total balance...">
+                        </div>
+                        <button type="button" class="cyber-btn" onclick="initStepsWithAmount()" style="background: linear-gradient(135deg, #ffb800, #18e0ff); color: #050c18; font-size: 9px; padding: 8px;">▶ START AUTO STEP</button>
+                    </div>
+
+                    <div id="stepActiveSection" style="display: none;">
+                        <div style="font-size: 8px; margin: 5px 0 7px; background: rgba(5,9,18,0.85); border: 1px solid rgba(255,255,255,0.07); padding: 6px; border-radius: 7px; text-align: center; font-weight: 700;">
+                            <span>AUTO STEP: <b id="currentStepIdx" style="color:var(--accent-cyan);">1</b> | BET: <b id="currentBetAmt" style="color:var(--accent-gold);">0</b> BDT</span>
+                        </div>
+
+                        <table class="step-table">
+                            <thead><tr><th>STEP</th><th>BET AMT</th><th>STATUS</th></tr></thead>
+                            <tbody id="stepTableBody"></tbody>
+                        </table>
+
+                        <div style="margin-top: 8px; background: rgba(5,9,18,0.88); padding: 8px; border-radius: 8px; font-size: 8.5px; text-align: center; border: 1px solid rgba(255,184,0,0.24);">
+                            <div>মোট প্রফিট: <span id="totalProfit" style="color: var(--accent-green); font-weight: 800;">0 BDT</span></div>
+                            <div>মোট লস: <span id="totalLoss" style="color: var(--accent-pink); font-weight: 800;">0 BDT</span></div>
+                            <div style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 5px; padding-top: 5px;">
+                                বর্তমান মোট ব্যালেন্স: <span id="currentTotalBalance" style="color: var(--accent-gold); font-weight: 900; font-size: 10.5px;">0 BDT</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP MAKER TAB -->
+                <div id="tab-stepmaker" class="cyber-panel" style="display:none;">
+                    <div class="header-drag-handle">≡ DRAG TO MOVE ≡</div>
+                    <img src="https://i.ibb.co/wh0KmJMb/converted.png" alt="AR TOONIX Logo" class="maker-logo">
+                    <div class="maker-title">AR TOONIX STEP MAKER</div>
+                    <div class="maker-subtitle">PREMIUM STEP CALCULATOR</div>
+                    <div class="input-group"><label for="makerBalance">মূল ব্যালেন্স</label><input type="number" id="makerBalance" class="maker-input" value="200" min="1"></div>
+                    <div class="input-group"><label for="makerCount">ধাপ সংখ্যা</label><input type="number" id="makerCount" class="maker-input" value="7" min="2" max="100"></div>
+                    <button type="button" class="maker-btn" onclick="makerGenerate()">✦ জেনারেট করুন</button>
+                    <div id="makerResult"><div style="text-align:center;color:var(--text-muted);font-size:8px;padding:15px 5px;">ব্যালেন্স ও ধাপ সংখ্যা দিয়ে জেনারেট করুন</div></div>
+                    <div class="maker-note">সব ধাপের যোগফল মূল ব্যালেন্সের সমান থাকবে এবং প্রতিটি পরের ধাপ আগের চেয়ে বেশি হবে।</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+
+        function initAudio() {
+            try {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            } catch(e) {}
+        }
+
+        ['click', 'touchstart', 'mousedown'].forEach(evt => {
+            document.addEventListener(evt, () => { initAudio(); }, { once: true });
+        });
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+
+                const masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(1.0, now);
+                masterGain.connect(audioCtx.destination);
+
+                if (type === 'tick') {
+                    const osc = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, now);
+                    gainNode.gain.setValueAtTime(0.25, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                    osc.connect(gainNode);
+                    gainNode.connect(masterGain);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+
+                } else if (type === 'win') {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        let osc = audioCtx.createOscillator();
+                        let g = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        let startTime = now + (idx * 0.09);
+
+                        osc.frequency.setValueAtTime(freq, startTime);
+                        g.gain.setValueAtTime(0.8, startTime);
+                        g.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+
+                        osc.connect(g);
+                        g.connect(masterGain);
+                        osc.start(startTime);
+                        osc.stop(startTime + 0.35);
+                    });
+
+                } else if (type === 'jackpot') {
+                    [440, 554.37, 659.25, 880, 1108.73, 1318.51, 1760, 2093].forEach((freq, idx) => {
+                        let osc = audioCtx.createOscillator();
+                        let g = audioCtx.createGain();
+                        osc.type = 'sawtooth';
+                        let startTime = now + (idx * 0.06);
+
+                        osc.frequency.setValueAtTime(freq, startTime);
+                        g.gain.setValueAtTime(0.95, startTime);
+                        g.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+
+                        osc.connect(g);
+                        g.connect(masterGain);
+                        osc.start(startTime);
+                        osc.stop(startTime + 0.35);
+                    });
+
+                } else if (type === 'loss') {
+                    const osc = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(280, now);
+                    osc.frequency.linearRampToValueAtTime(90, now + 0.4);
+
+                    gainNode.gain.setValueAtTime(0.75, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+                    osc.connect(gainNode);
+                    gainNode.connect(masterGain);
+
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                }
+            } catch (e) {}
+        }
+
+        /* FIREWORKS CANVAS ENGINE */
+        const fxCanvas = document.getElementById('fx-canvas');
+        const fxCtx = fxCanvas.getContext('2d');
+        let fireworks = [];
+        let particles = [];
+
+        function resizeFxCanvas() {
+            fxCanvas.width = window.innerWidth;
+            fxCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeFxCanvas);
+        resizeFxCanvas();
+
+        class Firework {
+            constructor(targetX, targetY, colors) {
+                this.x = window.innerWidth / 2;
+                this.y = window.innerHeight;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.distanceToTarget = Math.hypot(targetX - this.x, targetY - this.y);
+                this.distanceTraveled = 0;
+                this.coordinates = [];
+                this.angle = Math.atan2(targetY - this.y, targetX - this.x);
+                this.speed = 12;
+                this.acceleration = 1.05;
+                this.brightness = Math.random() * 50 + 50;
+                this.colors = colors;
+            }
+            update(index) {
+                this.speed *= this.acceleration;
+                let vx = Math.cos(this.angle) * this.speed;
+                let vy = Math.sin(this.angle) * this.speed;
+                this.distanceTraveled = Math.hypot(this.x + vx - (window.innerWidth/2), this.y + vy - window.innerHeight);
+                if (this.distanceTraveled >= this.distanceToTarget) {
+                    createParticles(this.targetX, this.targetY, this.colors);
+                    fireworks.splice(index, 1);
+                } else {
+                    this.x += vx;
+                    this.y += vy;
+                }
+            }
+            draw() {
+                fxCtx.beginPath();
+                fxCtx.moveTo(this.x, this.y);
+                fxCtx.lineTo(this.x, this.y + 10);
+                fxCtx.strokeStyle = '#fff';
+                fxCtx.stroke();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = Math.random() * 10 + 2;
+                this.friction = 0.95;
+                this.gravity = 1;
+                this.hue = color;
+                this.brightness = Math.random() * 50 + 50;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.015 + 0.01;
+            }
+            update(index) {
+                this.speed *= this.friction;
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed + this.gravity;
+                this.alpha -= this.decay;
+                if (this.alpha <= 0) particles.splice(index, 1);
+            }
+            draw() {
+                fxCtx.save();
+                fxCtx.globalAlpha = this.alpha;
+                fxCtx.beginPath();
+                fxCtx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
+                fxCtx.fillStyle = this.hue;
+                fxCtx.fill();
+                fxCtx.restore();
+            }
+        }
+
+        function createParticles(x, y, colors) {
+            let particleCount = 60;
+            for (let i = 0; i < particleCount; i++) {
+                let color = colors[Math.floor(Math.random() * colors.length)];
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function launchFireworks(type) {
+            const body = document.body;
+            body.classList.remove('flash-win', 'flash-jackpot');
+            void body.offsetWidth;
+
+            if (type === 'jackpot') {
+                body.classList.add('flash-jackpot');
+                setTimeout(() => { body.classList.remove('flash-jackpot'); }, 3000);
+            } else {
+                body.classList.add('flash-win');
+                setTimeout(() => { body.classList.remove('flash-win'); }, 2000);
+            }
+
+            let colors = type === 'jackpot' ? ['#ffb800', '#18e0ff', '#00f59b', '#9b5cff', '#ffffff'] : ['#00f59b', '#ffb800', '#18e0ff'];
+            let count = type === 'jackpot' ? 10 : 5;
+
+            for(let i=0; i<count; i++) {
+                setTimeout(() => {
+                    let tx = Math.random() * (window.innerWidth - 150) + 75;
+                    let ty = Math.random() * (window.innerHeight * 0.6) + 40;
+                    fireworks.push(new Firework(tx, ty, colors));
+                }, i * 200);
+            }
+        }
+
+        function loopFx() {
+            requestAnimationFrame(loopFx);
+            fxCtx.globalCompositeOperation = 'destination-out';
+            fxCtx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+            fxCtx.fillRect(0, 0, fxCanvas.width, fxCanvas.height);
+            fxCtx.globalCompositeOperation = 'lighter';
+
+            fireworks.forEach((fw, index) => { fw.update(index); fw.draw(); });
+            particles.forEach((p, index) => { p.update(index); p.draw(); });
+        }
+        loopFx();
+
+        const dragItem = document.getElementById("draggableApp");
+        let active = false, currentX, currentY, initialX, initialY, xOffset = 0, yOffset = 0;
+
+        dragItem.addEventListener("touchstart", dragStart, { passive: false });
+        dragItem.addEventListener("touchend", dragEnd, false);
+        dragItem.addEventListener("touchmove", drag, { passive: false });
+        dragItem.addEventListener("mousedown", dragStart, false);
+        dragItem.addEventListener("mouseup", dragEnd, false);
+        dragItem.addEventListener("mousemove", drag, false);
+
+        function dragStart(e) {
+            if (e.target.closest('button, input, label, table')) return;
+            initialX = (e.type === "touchstart") ? e.touches[0].clientX - xOffset : e.clientX - xOffset;
+            initialY = (e.type === "touchstart") ? e.touches[0].clientY - yOffset : e.clientY - yOffset;
+            active = true;
+        }
+        function dragEnd() { initialX = currentX; initialY = currentY; active = false; }
+        function drag(e) {
+            if (active) {
+                e.preventDefault();
+                currentX = (e.type === "touchmove") ? e.touches[0].clientX - initialX : e.clientX - initialX;
+                currentY = (e.type === "touchmove") ? e.touches[0].clientY - initialY : e.clientY - initialY;
+                xOffset = currentX; yOffset = currentY;
+                dragItem.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+            }
+        }
+
+        function setPanelMode(showAll) {
+            initAudio();
+            document.getElementById('mainPanelGroup').style.display = showAll ? 'block' : 'none';
+            document.getElementById('miniFloatingLogo').style.display = showAll ? 'none' : 'flex';
+            dragItem.classList.toggle('hidden-logo-only', !showAll);
+        }
+
+        function openGame(url) {
+            const frame = document.getElementById('gameFrame');
+            frame.src = url; frame.style.display = 'block'; initAudio();
+        }
+
+        function handleLogin(e) {
+            e.preventDefault(); initAudio();
+            if (document.getElementById('accessKey').value.trim() === "20256") {
+                document.getElementById('loginError').style.display = 'none';
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('dashboard-screen').style.display = 'block';
+                startEngine();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        function switchTab(tabName) {
+            initAudio();
+            document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-prediction').style.display = 'none';
+            document.getElementById('tab-history').style.display = 'none';
+            document.getElementById('tab-step').style.display = 'none';
+            document.getElementById('tab-stepmaker').style.display = 'none';
+
+            const activeBtn = document.getElementById('tabBtn-' + tabName);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            if (tabName === 'prediction') {
+                document.getElementById('tab-prediction').style.display = 'block';
+            } else if (tabName === 'history') {
+                document.getElementById('tab-history').style.display = 'block';
+                updateTable();
+                perfectPredictionEngine();
+            } else if (tabName === 'step') {
+                document.getElementById('tab-step').style.display = 'block';
+                ensureAutoStepReady();
+            } else if (tabName === 'stepmaker') {
+                document.getElementById('tab-stepmaker').style.display = 'block';
+                makerGenerate();
+            }
+        }
+
+        /* ----------------------------------------------------
+           4-MARKET SELECTOR LOGIC (30S, 60S, 3MIN, 5MIN)
+           +3S TIMING OFFSET SYNC FIX
+        ---------------------------------------------------- */
+        const TIMING_OFFSET_SEC = 3;
+
+        const MARKET_CONFIG = {
+            '30s': {
+                label: 'WINGO 30S',
+                seconds: 30,
+                btnId: 'btn30s',
+                endpoint: 'https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json'
+            },
+            '60s': {
+                label: 'WINGO 60S',
+                seconds: 60,
+                btnId: 'btn60s',
+                endpoint: 'https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json'
+            },
+            '3m': {
+                label: 'WINGO 3MIN',
+                seconds: 180,
+                btnId: 'btn3m',
+                endpoint: 'https://draw.ar-lottery01.com/WinGo/WinGo_3M/GetHistoryIssuePage.json'
+            },
+            '5m': {
+                label: 'WINGO 5MIN',
+                seconds: 300,
+                btnId: 'btn5m',
+                endpoint: 'https://draw.ar-lottery01.com/WinGo/WinGo_5M/GetHistoryIssuePage.json'
+            }
+        };
+
+        let currentGameMode = '30s';
+        let isMarketMenuOpen = false;
+        let lastCountdownSecShown = null;
+        let waitingResultAfterFiveSec = false;
+        let shownSignalPeriods = new Set();
+        let evaluatedPeriods = new Set();
+        let calloutHideTimer = null;
+
+        function getSyncedElapsedSeconds(roundSeconds) {
+            const nowSec = Math.floor(Date.now() / 1000) + TIMING_OFFSET_SEC;
+            return ((nowSec % roundSeconds) + roundSeconds) % roundSeconds;
+        }
+
+        function toggleMarketMenu() {
+            initAudio();
+            isMarketMenuOpen = !isMarketMenuOpen;
+            const menu = document.getElementById('marketMenu');
+            const arrow = document.getElementById('marketMenuArrow');
+            menu.classList.toggle('open', isMarketMenuOpen);
+            arrow.innerText = isMarketMenuOpen ? '▲' : '▼';
+        }
+
+        function switchGameMode(mode) {
+            if (!MARKET_CONFIG[mode]) return;
+            initAudio();
+            currentGameMode = mode;
+
+            Object.keys(MARKET_CONFIG).forEach(key => {
+                const btn = document.getElementById(MARKET_CONFIG[key].btnId);
+                if (btn) btn.classList.toggle('active', key === mode);
+            });
+
+            document.getElementById('activeMarketLabel').innerText = '⏱️ MARKET: ' + MARKET_CONFIG[mode].label;
+
+            isMarketMenuOpen = false;
+            document.getElementById('marketMenu').classList.remove('open');
+            document.getElementById('marketMenuArrow').innerText = '▼';
+
+            lastProcessed = "";
+            currentActive = null;
+            lastCountdownSecShown = null;
+            waitingResultAfterFiveSec = false;
+            document.getElementById('lastFiveOverlay').classList.remove('active');
+            document.getElementById('tradeCalloutBanner').classList.remove('show');
+            document.getElementById('res').innerText = 'ANALYZING...';
+            document.getElementById('n1').innerText = '?';
+            document.getElementById('n2').innerText = '?';
+
+            updateTimerDisplay();
+            loadSavedData();
+            updateTable();
+            updateStats();
+            perfectPredictionEngine();
+        }
+
+        /* SHOW EXACT BIG / SMALL SIGNAL TEXT 5-10S INTO THE NEW PERIOD FOR 3 SECONDS */
+        function checkAndShowSignalInWindow(elapsedSec) {
+            if (!currentActive) return;
+            if (elapsedSec < 5 || elapsedSec > 10) return;
+
+            const cfg = MARKET_CONFIG[currentGameMode] || MARKET_CONFIG['30s'];
+            const periodKey = `${currentGameMode}_${currentActive.period}`;
+            if (shownSignalPeriods.has(periodKey)) return;
+            shownSignalPeriods.add(periodKey);
+
+            const isBig = currentActive.size === 'BIG';
+            const sizeLabel = isBig ? 'BIG' : 'SMALL';
+            const banner = document.getElementById('tradeCalloutBanner');
+            const sizeEl = document.getElementById('calloutSizeText');
+
+            document.getElementById('calloutTag').innerText = `${cfg.label} • PERIOD #${currentActive.period.slice(-4)}`;
+            document.getElementById('calloutMain').innerText = `এই নাম্বারে ট্রেড নেন: ${currentActive.n1} ও ${currentActive.n2}`;
+            sizeEl.innerText = `SIGNAL: ${sizeLabel}`;
+            sizeEl.className = `callout-size-text ${isBig ? 'callout-size-big' : 'callout-size-small'}`;
+            banner.className = isBig ? 'theme-big' : 'theme-small';
+
+            void banner.offsetWidth;
+            banner.classList.add('show');
+
+            if (calloutHideTimer) clearTimeout(calloutHideTimer);
+            calloutHideTimer = setTimeout(() => {
+                banner.classList.remove('show');
+            }, 3000);
+        }
+
+        function updateTimerDisplay() {
+            const cfg = MARKET_CONFIG[currentGameMode] || MARKET_CONFIG['30s'];
+            const elapsed = getSyncedElapsedSeconds(cfg.seconds);
+            const remSec = cfg.seconds - elapsed;
+            const mins = Math.floor(remSec / 60);
+            const secs = remSec % 60;
+            const timerEl = document.getElementById('timer');
+            if (timerEl) {
+                timerEl.innerText = mins.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
+            }
+
+            // Show trade signal 5-10 seconds into the new period
+            checkAndShowSignalInWindow(elapsed);
+
+            // LAST 5 SECONDS SCREEN ENTRY (5, 4, 3, 2, 1)
+            const overlay = document.getElementById('lastFiveOverlay');
+            const numEl = document.getElementById('countdownNumber');
+            const boxEl = document.getElementById('countdownBox');
+
+            if (remSec >= 1 && remSec <= 5) {
+                waitingResultAfterFiveSec = true;
+                overlay.classList.add('active');
+                if (lastCountdownSecShown !== remSec) {
+                    lastCountdownSecShown = remSec;
+                    numEl.innerText = remSec;
+                    boxEl.style.animation = 'none';
+                    void boxEl.offsetWidth;
+                    boxEl.style.animation = 'countEntryPop 0.65s cubic-bezier(0.22, 1, 0.36, 1)';
+                    playSound('tick');
+                }
+            } else {
+                lastCountdownSecShown = null;
+                overlay.classList.remove('active');
+
+                if (waitingResultAfterFiveSec) {
+                    waitingResultAfterFiveSec = false;
+                    perfectPredictionEngine();
+                }
+            }
+        }
+
+        let modalTimer = null;
+        function triggerResultModal(title, message, color) {
+            const modal = document.getElementById('customAlertModal');
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertMsg').innerText = message;
+            modal.style.borderColor = color;
+            modal.style.display = 'block';
+
+            if (modalTimer) clearTimeout(modalTimer);
+            modalTimer = setTimeout(() => {
+                closeAlertModal();
+            }, 3000);
+        }
+        function closeAlertModal() {
+            if (modalTimer) clearTimeout(modalTimer);
+            document.getElementById('customAlertModal').style.display = 'none';
+        }
+
+        let sessionData = [];
+        let stats = { wins: 0, losses: 0, jackpots: 0, correctPredictions: 0, totalPredictions: 0, totalProfitAmt: 0, totalLossAmt: 0, initialBalance: 1000 };
+        let lastProcessed = ""; let currentActive = null;
+
+        let steps = [];
+        let activeStepIndex = 0;
+
+        function ensureAutoStepReady() {
+            if (steps.length > 0) {
+                document.getElementById('stepSetupSection').style.display = 'none';
+                document.getElementById('stepActiveSection').style.display = 'block';
+                renderSteps();
+            }
+        }
+
+        function initStepsWithAmount() {
+            initAudio();
+            let base = parseFloat(document.getElementById('baseAmount').value) || 2;
+            let startingBalance = parseFloat(document.getElementById('totalBalanceInput').value) || 1000;
+
+            stats.initialBalance = startingBalance;
+            stats.totalProfitAmt = 0;
+            stats.totalLossAmt = 0;
+
+            steps = [
+                { amount: base, status: 'AUTO RUN' },
+                { amount: base * 2, status: 'PENDING' },
+                { amount: base * 4, status: 'PENDING' },
+                { amount: base * 8, status: 'PENDING' },
+                { amount: base * 16, status: 'PENDING' },
+                { amount: base * 32, status: 'PENDING' },
+                { amount: base * 64, status: 'PENDING' }
+            ];
+            activeStepIndex = 0;
+
+            document.getElementById('stepSetupSection').style.display = 'none';
+            document.getElementById('stepActiveSection').style.display = 'block';
+            renderSteps();
+        }
+
+        function renderSteps() {
+            if (steps.length === 0) return;
+            let html = "";
+            steps.forEach((st, idx) => {
+                let activeStyle = (idx === activeStepIndex) ? 'background: rgba(255,184,0,0.16);' : '';
+                let rowStatus = (idx === activeStepIndex) ? '<span style="color:var(--accent-cyan);font-weight:800;">AUTO RUN</span>' : st.status;
+                html += `<tr style="${activeStyle}">
+                            <td><b>STEP ${idx+1}</b></td>
+                            <td style="color:var(--accent-gold);font-weight:700;">${st.amount || 0} BDT</td>
+                            <td>${rowStatus}</td>
+                         </tr>`;
+            });
+            document.getElementById('stepTableBody').innerHTML = html;
+            document.getElementById('currentStepIdx').innerText = activeStepIndex + 1;
+            document.getElementById('currentBetAmt').innerText = steps[activeStepIndex] ? steps[activeStepIndex].amount : 0;
+
+            let safeProfit = isNaN(stats.totalProfitAmt) ? 0 : stats.totalProfitAmt;
+            let safeLoss = isNaN(stats.totalLossAmt) ? 0 : stats.totalLossAmt;
+            let initBal = isNaN(stats.initialBalance) ? 1000 : stats.initialBalance;
+
+            document.getElementById('totalProfit').innerText = safeProfit.toFixed(2) + ' BDT';
+            document.getElementById('totalLoss').innerText = safeLoss + ' BDT';
+
+            let currentTotal = initBal + safeProfit - safeLoss;
+            let balElem = document.getElementById('currentTotalBalance');
+            balElem.innerText = currentTotal.toFixed(2) + ' BDT';
+            balElem.style.color = currentTotal >= initBal ? 'var(--accent-green)' : 'var(--accent-pink)';
+            saveState();
+        }
+
+        function handleTradeResult(resultType, isJackpotHit = false) {
+            const hasActiveSteps = steps.length > 0;
+            if (hasActiveSteps && activeStepIndex >= steps.length) activeStepIndex = 0;
+            let currentBet = hasActiveSteps ? (steps[activeStepIndex].amount || 0) : 0;
+
+            if (resultType === 'win') {
+                if (isJackpotHit) {
+                    if (hasActiveSteps) {
+                        let rawWinAmt = currentBet;
+                        let netWinAmt = rawWinAmt - (rawWinAmt * 0.04);
+                        stats.totalProfitAmt = (stats.totalProfitAmt || 0) + netWinAmt;
+                        steps[activeStepIndex].status = '<span style="color:var(--accent-gold);font-weight:800;">JACKPOT (WIN)</span>';
+                    }
+                    stats.jackpots++;
+                    triggerResultModal('🔥 JACKPOT HIT! 🔥', '😋আজকে মনে হয় খাচ্চি খাওয়া হবে,,, মার্কেট তো শেষ 😋', '#ffb800');
+                    playSound('jackpot');
+                    launchFireworks('jackpot');
+                } else {
+                    if (hasActiveSteps) {
+                        let rawWinAmt = currentBet;
+                        let netWinAmt = rawWinAmt - (rawWinAmt * 0.04);
+                        stats.totalProfitAmt = (stats.totalProfitAmt || 0) + netWinAmt;
+                        steps[activeStepIndex].status = '<span style="color:var(--accent-green);font-weight:800;">WIN</span>';
+                    }
+                    stats.wins++;
+                    triggerResultModal('🎉 WIN SUCCESS! 🎉', '💸কোপা শামসুরের মাইরে বাপ মার্কেট কে ভরে দেও 💸', '#00f59b');
+                    playSound('win');
+                    launchFireworks('win');
+                }
+                if (hasActiveSteps) {
+                    activeStepIndex = 0;
+                    steps.forEach((s, i) => s.status = i === 0 ? 'AUTO RUN' : 'PENDING');
+                }
+            } else {
+                if (hasActiveSteps) {
+                    stats.totalLossAmt = (stats.totalLossAmt || 0) + currentBet;
+                    steps[activeStepIndex].status = '<span style="color:var(--accent-pink);font-weight:800;">LOSS</span>';
+                }
+                stats.losses++;
+                triggerResultModal('❌ TRADE LOSS ❌', '🤕আহরে সোনাগো আমার মনে কষ্ট নিও না,, আবার চেষ্টা করো আশা করি উইন হবে 🤕', '#ff2a6d');
+                playSound('loss');
+
+                const body = document.body;
+                body.classList.remove('loss-shake');
+                void body.offsetWidth;
+                body.classList.add('loss-shake');
+
+                if (hasActiveSteps) {
+                    activeStepIndex++;
+                    if (activeStepIndex >= steps.length) {
+                        activeStepIndex = 0;
+                        steps.forEach((s, i) => s.status = i === 0 ? 'AUTO RUN' : 'PENDING');
+                    } else {
+                        steps[activeStepIndex].status = 'AUTO RUN';
+                    }
+                }
+            }
+            if (hasActiveSteps) renderSteps();
+            updateStats();
+        }
+
+        function resetStatsOnly() {
+            initAudio();
+            stats = { wins: 0, losses: 0, jackpots: 0, correctPredictions: 0, totalPredictions: 0, totalProfitAmt: 0, totalLossAmt: 0, initialBalance: 1000 };
+            steps = [];
+            activeStepIndex = 0;
+            evaluatedPeriods.clear();
+            shownSignalPeriods.clear();
+
+            document.getElementById('stepSetupSection').style.display = 'block';
+            document.getElementById('stepActiveSection').style.display = 'none';
+
+            localStorage.removeItem('ar_stats_' + currentGameMode);
+            updateStats();
+            triggerResultModal('REFRESHED', 'AR TOONIX সিস্টেম সফলভাবে রিফ্রেশ করা হয়েছে!', '#ffb800');
+        }
+
+        function loadSavedData() {
+            sessionData = JSON.parse(localStorage.getItem('ar_session_' + currentGameMode)) || [];
+            let savedStats = JSON.parse(localStorage.getItem('ar_stats_' + currentGameMode));
+            if (savedStats) {
+                stats = savedStats;
+                if (isNaN(stats.totalProfitAmt)) stats.totalProfitAmt = 0;
+                if (isNaN(stats.totalLossAmt)) stats.totalLossAmt = 0;
+                if (isNaN(stats.initialBalance)) stats.initialBalance = 1000;
+            } else {
+                stats = { wins: 0, losses: 0, jackpots: 0, correctPredictions: 0, totalPredictions: 0, totalProfitAmt: 0, totalLossAmt: 0, initialBalance: 1000 };
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('ar_session_' + currentGameMode, JSON.stringify(sessionData));
+            localStorage.setItem('ar_stats_' + currentGameMode, JSON.stringify(stats));
+        }
+
+        function updateStats() {
+            const total = stats.wins + stats.losses + stats.jackpots;
+            const winRate = total > 0 ? Math.round(((stats.wins + stats.jackpots) / total) * 100) : 0;
+            const accuracy = stats.totalPredictions > 0 ? Math.round((stats.correctPredictions / stats.totalPredictions) * 100) : 0;
+
+            document.getElementById('totalWins').innerText = stats.wins + stats.jackpots;
+            document.getElementById('totalLosses').innerText = stats.losses;
+            document.getElementById('winRate').innerText = winRate + '%';
+            document.getElementById('jackpotCount').innerText = stats.jackpots;
+            document.getElementById('accuracy').innerText = accuracy + '%';
+            saveState();
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('session-h');
+            if (!tbody) return;
+            if (!Array.isArray(sessionData) || sessionData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="color: var(--text-muted); padding: 10px;">WAITING...</td></tr>`;
+                return;
+            }
+            let html = "";
+            sessionData.slice(0, 10).forEach(i => {
+                const resText = i.res || '<span style="color:var(--text-muted);">DONE</span>';
+                html += `<tr><td>${i.p}</td><td><strong style="color:var(--accent-gold);">${i.num}</strong></td><td style="color:${i.s==='BIG'?'var(--accent-cyan)':'var(--accent-pink)'};font-weight:700;">${i.s}</td><td>${resText}</td></tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        /* ----------------------------------------------------
+           AR TOONIX BIG / SMALL SIGNAL ENGINE
+        ---------------------------------------------------- */
+        function computeToonixSignal(numbers, sizes, nextPeriodStr, prevSignal) {
+            const bigCount8 = sizes.slice(0, 8).filter(s => s === 'BIG').length;
+            const smallCount8 = sizes.slice(0, 8).filter(s => s === 'SMALL').length;
+
+            let streakType = sizes[0];
+            let streakLen = 0;
+            for (let i = 0; i < sizes.length; i++) {
+                if (sizes[i] === streakType) streakLen++;
+                else break;
+            }
+
+            const periodSeed = Number(BigInt(nextPeriodStr || '0') % 97n);
+            let trend = 'BIG';
+            let confidence = 93;
+
+            if (streakLen >= 3) {
+                trend = streakType === 'BIG' ? 'SMALL' : 'BIG';
+                confidence = Math.min(98, 93 + streakLen);
+            } else if (smallCount8 - bigCount8 >= 3) {
+                trend = 'BIG';
+                confidence = 95;
+            } else if (bigCount8 - smallCount8 >= 3) {
+                trend = 'SMALL';
+                confidence = 95;
+            } else {
+                const momentum = (bigCount8 + periodSeed) % 2 === 0 ? 'BIG' : 'SMALL';
+                trend = momentum;
+                confidence = 92 + (periodSeed % 4);
+            }
+
+            if (prevSignal && prevSignal.size === trend && (periodSeed % 3 === 0)) {
+                trend = trend === 'BIG' ? 'SMALL' : 'BIG';
+            }
+
+            const pool = trend === 'BIG' ? [5, 6, 7, 8, 9] : [0, 1, 2, 3, 4];
+            const recent12 = numbers.slice(0, 12);
+
+            const scoredPool = pool.map((digit, idx) => {
+                const recentHits = recent12.filter(n => n === digit).length;
+                const lastSeenIdx = recent12.indexOf(digit);
+                const recencyBonus = lastSeenIdx === -1 ? 6 : lastSeenIdx * 1.5;
+                const notRepeatBonus = (prevSignal && prevSignal.n1 !== digit && prevSignal.n2 !== digit) ? 4 : 0;
+                const rotBonus = ((digit + periodSeed + idx) % 5);
+                return {
+                    digit,
+                    score: recencyBonus + notRepeatBonus + rotBonus - (recentHits * 2.5)
+                };
+            }).sort((a, b) => b.score - a.score);
+
+            let n1 = scoredPool[0].digit;
+            if (prevSignal && n1 === prevSignal.n1 && scoredPool.length > 1) {
+                n1 = scoredPool[1].digit;
+            }
+            const remaining = scoredPool.filter(item => item.digit !== n1);
+            const n2 = remaining.length > 0 ? remaining[0].digit : pool[(pool.indexOf(n1) + 1) % pool.length];
+
+            return { trend, n1, n2, confidence };
+        }
+
+        async function perfectPredictionEngine() {
+            const activeModeAtStart = currentGameMode;
+            try {
+                const cfg = MARKET_CONFIG[activeModeAtStart] || MARKET_CONFIG['30s'];
+                const endpoint = `${cfg.endpoint}?t=${Date.now()}`;
+
+                const res = await fetch(endpoint);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data?.data?.list?.length) return;
+
+                if (activeModeAtStart !== currentGameMode) return;
+
+                const list = data.data.list;
+                const latest = list[0];
+                const issue = String(latest.issueNumber);
+
+                // Populate initial history if empty
+                if (sessionData.length === 0 && list.length > 1) {
+                    list.slice(0, 10).forEach(item => {
+                        const itemNum = parseInt(item.number);
+                        if (!isNaN(itemNum)) {
+                            sessionData.push({
+                                p: String(item.issueNumber).slice(-4),
+                                num: itemNum,
+                                s: itemNum >= 5 ? "BIG" : "SMALL",
+                                res: '<span style="color:var(--text-muted);">PAST</span>'
+                            });
+                        }
+                    });
+                    updateTable();
+                }
+
+                // Evaluate active signal whenever the matching period result arrives
+                const evalKey = `${activeModeAtStart}_${issue}`;
+                if (
+                    currentActive &&
+                    String(currentActive.period) === issue &&
+                    !evaluatedPeriods.has(evalKey)
+                ) {
+                    evaluatedPeriods.add(evalKey);
+
+                    const n = parseInt(latest.number);
+                    const sz = n >= 5 ? "BIG" : "SMALL";
+
+                    let statusHtml = '';
+
+                    if (n === currentActive.n1 || n === currentActive.n2) {
+                        statusHtml = '<span style="color:var(--accent-gold);font-weight:800;">JACKPOT</span>';
+                        stats.correctPredictions += 2;
+                        handleTradeResult('win', true);
+                    } else if (sz === currentActive.size) {
+                        statusHtml = '<span style="color:var(--accent-green);font-weight:800;">WIN</span>';
+                        stats.correctPredictions++;
+                        handleTradeResult('win', false);
+                    } else {
+                        statusHtml = '<span style="color:var(--accent-pink);font-weight:800;">LOSS</span>';
+                        handleTradeResult('loss', false);
+                    }
+                    stats.totalPredictions++;
+
+                    sessionData.unshift({ p: issue.slice(-4), num: n, s: sz, res: statusHtml });
+                    if (sessionData.length > 10) sessionData = sessionData.slice(0, 10);
+                    updateStats();
+                    updateTable();
+                }
+
+                const nextP = (BigInt(issue) + 1n).toString();
+                if (!currentActive || String(currentActive.period) !== nextP) {
+                    const prevSig = currentActive;
+                    const numbers = list.slice(0, 25).map(x => parseInt(x.number));
+                    const sizes = numbers.map(n => n >= 5 ? "BIG" : "SMALL");
+
+                    const dots = document.querySelectorAll('.pattern-dot');
+                    sizes.slice(0, 5).forEach((sz, idx) => {
+                        if (idx < dots.length) {
+                            dots[idx].className = `pattern-dot ${sz === 'BIG' ? 'active-big' : 'active-small'}`;
+                            dots[idx].innerText = sz === 'BIG' ? 'B' : 'S';
+                        }
+                    });
+
+                    const signal = computeToonixSignal(numbers, sizes, nextP, prevSig);
+                    const trend = signal.trend;
+                    const n1 = signal.n1;
+                    const n2 = signal.n2;
+
+                    currentActive = { period: nextP, size: trend, n1, n2 };
+
+                    document.getElementById('res').innerText = trend;
+                    document.getElementById('res').style.color = trend === "BIG" ? "var(--accent-cyan)" : "var(--accent-gold)";
+                    document.getElementById('n1').innerText = n1;
+                    document.getElementById('n2').innerText = n2;
+                    document.getElementById('nextP').innerText = nextP.slice(-4);
+                    document.getElementById('confidence').innerText = `AR TOONIX CONFIDENCE: ${signal.confidence}%`;
+                    document.getElementById('levelIndicator').innerText = `⚡ AR TOONIX AI (${cfg.label}) LIVE ⚡`;
+
+                    const elapsed = getSyncedElapsedSeconds(cfg.seconds);
+                    checkAndShowSignalInWindow(elapsed);
+                }
+                lastProcessed = issue;
+            } catch(e) {}
+        }
+
+        function makerMakeSteps(balance, count) {
+            const weights = Array.from({ length: count }, (_, i) => 2 ** i);
+            const wt = weights.reduce((a, b) => a + b, 0);
+            let a = weights.map(w => Math.max(1, Math.floor(balance * w / wt)));
+            for (let i = 1; i < count; i++) {
+                if (a[i] <= a[i - 1]) a[i] = a[i - 1] + 1;
+            }
+            let total = a.reduce((x, y) => x + y, 0);
+            if (total > balance) {
+                a = Array.from({ length: count }, (_, i) => i + 1);
+                total = a.reduce((x, y) => x + y, 0);
+                if (total > balance) return null;
+            }
+            a[count - 1] += balance - total;
+            return a;
+        }
+
+        function makerGenerate() {
+            initAudio();
+            const b = Number(document.getElementById('makerBalance').value);
+            const c = Number(document.getElementById('makerCount').value);
+            const out = document.getElementById('makerResult');
+            if (!out) return;
+
+            if (!b || b < 1 || !c || c < 2 || c > 100) {
+                out.innerHTML = '<div style="text-align:center;color:var(--accent-pink);font-size:8px;padding:12px;font-weight:700;">সঠিক ব্যালেন্স ও ধাপ সংখ্যা দিন</div>';
+                return;
+            }
+            if (b < c * (c + 1) / 2) {
+                out.innerHTML = '<div style="text-align:center;color:var(--accent-pink);font-size:8px;padding:12px;font-weight:700;">এই সংখ্যক বাড়তে থাকা ধাপের জন্য ব্যালেন্স কম।</div>';
+                return;
+            }
+            const genSteps = makerMakeSteps(b, c);
+            if (!genSteps) {
+                out.innerHTML = '<div style="text-align:center;color:var(--accent-pink);font-size:8px;padding:12px;font-weight:700;">ধাপ তৈরি করা সম্ভব নয়, ব্যালেন্স বাড়ান।</div>';
+                return;
+            }
+
+            let run = 0;
+            let rows = '';
+            genSteps.forEach((v, i) => {
+                run += v;
+                rows += '<tr><td>STEP ' + (i + 1) + '</td><td class="maker-amount">' + v.toLocaleString('en-US') + '</td><td class="maker-total">' + run.toLocaleString('en-US') + '</td></tr>';
+            });
+
+            out.innerHTML =
+                '<table class="maker-table"><thead><tr><th>ধাপ</th><th>অ্যামাউন্ট</th><th>মোট</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+                '<div style="text-align:center;color:var(--accent-gold);font-size:8.5px;font-weight:800;margin-top:7px;">মোট: ' + run.toLocaleString('en-US') + '</div>' +
+                '<div class="maker-actions">' +
+                    '<button type="button" class="maker-action maker-use" onclick="applyMakerStepsToArStep()">⚡ USE THIS</button>' +
+                    '<button type="button" class="maker-action maker-copy" onclick="makerCopy()">⧉ কপি</button>' +
+                    '<button type="button" class="maker-action maker-reset" onclick="makerReset()">↻ রিসেট</button>' +
+                '</div>';
+            window.makerSteps = genSteps;
+        }
+
+        function applyMakerStepsToArStep() {
+            initAudio();
+            let stepList = window.makerSteps;
+            if (!stepList || stepList.length === 0) {
+                makerGenerate();
+                stepList = window.makerSteps;
+            }
+            if (!stepList || stepList.length === 0) return;
+
+            let startingBalance = parseFloat(document.getElementById('makerBalance').value) || 1000;
+            stats.initialBalance = startingBalance;
+            stats.totalProfitAmt = 0;
+            stats.totalLossAmt = 0;
+
+            steps = stepList.map((amt, idx) => ({ amount: amt, status: idx === 0 ? 'AUTO RUN' : 'PENDING' }));
+            activeStepIndex = 0;
+
+            document.getElementById('stepSetupSection').style.display = 'none';
+            document.getElementById('stepActiveSection').style.display = 'block';
+
+            switchTab('step');
+            triggerResultModal('SUCCESS', 'স্টেপগুলো সফলভাবে AR TOONIX STEP-এ যুক্ত করা হয়েছে!', '#ffb800');
+            renderSteps();
+        }
+
+        function makerCopy() {
+            initAudio();
+            if (!window.makerSteps || !window.makerSteps.length) return;
+            const text = 'AR TOONIX STEP MAKER\n\n' + window.makerSteps.map((v, i) => 'Step ' + (i + 1) + ' : ' + v).join('\n') + '\n\nTotal : ' + window.makerSteps.reduce((a, b) => a + b, 0);
+            const done = () => triggerResultModal('COPIED', 'Step list কপি হয়েছে।', '#ffb800');
+            if (navigator.clipboard) navigator.clipboard.writeText(text).then(done).catch(() => makerFallbackCopy(text));
+            else makerFallbackCopy(text);
+        }
+        function makerFallbackCopy(text) {
+            const t = document.createElement('textarea');
+            t.value = text;
+            document.body.appendChild(t);
+            t.select();
+            document.execCommand('copy');
+            t.remove();
+            triggerResultModal('COPIED', 'Step list কপি হয়েছে।', '#ffb800');
+        }
+        function makerReset() {
+            document.getElementById('makerBalance').value = 200;
+            document.getElementById('makerCount').value = 7;
+            makerGenerate();
+        }
+
+        let engineStarted = false;
+        function startEngine() {
+            if (engineStarted) return;
+            engineStarted = true;
+            loadSavedData();
+            updateTimerDisplay();
+            setInterval(updateTimerDisplay, 1000);
+            updateTable();
+            updateStats();
+            perfectPredictionEngine();
+            setInterval(perfectPredictionEngine, 1500);
+        }
+    </script>
+</body>
+</html>
